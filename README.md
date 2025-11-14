@@ -57,10 +57,12 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
  ```bash
   python3 -m venv .venv
   source .venv/bin/activate
+  ```
 3. Install dependencies:
   ```bash
   pip install torch soundfile langdetect pyperclip numpy
   sudo apt install ffmpeg vlc
+  ```
 4. Run the application:
   python main.py
 🖥️ Desktop Integration
