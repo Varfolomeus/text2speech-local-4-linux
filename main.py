@@ -115,7 +115,7 @@ def main():
     )
 
     if proc.returncode == 0:
-        show_message("Успіх", f"Збережено у {output_file} (голос: {speaker})")
+        #show_message("Успіх", f"Збережено у {output_file} (голос: {speaker})")
         # VLC відтворює і закривається сам
         #subprocess.run(["cvlc", "--play-and-exit", output_file])
         subprocess.run([
