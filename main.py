@@ -113,7 +113,6 @@ def main():
             "--no-terminal",
             "--really-quiet",
             "--no-video",
-            "--end=quit",
             output_file
         ])
     else:
