@@ -107,7 +107,15 @@ def main():
     if proc.returncode == 0:
         show_message("Успіх", f"Збережено у {output_file} (голос: {speaker})")
         # VLC відтворює і закривається сам
-        subprocess.run(["cvlc", "--play-and-exit", output_file])
+        #subprocess.run(["cvlc", "--play-and-exit", output_file])
+        subprocess.run([
+            "mpv",
+            "--no-terminal",
+            "--really-quiet",
+            "--no-video",
+            "--end=quit",
+            output_file
+        ])
     else:
         show_message("Помилка ffmpeg", proc.stderr.decode(), is_error=True)
 
