@@ -92,7 +92,17 @@ def main():
     buffer.seek(0)
 
     # Шлях до вихідного файлу
-    output_file = "/home/k7/Downloads/111.mp3"
+    xdg_download = os.path.expanduser("~/Downloads")  # fallback
+    config_file = os.path.expanduser("~/.config/user-dirs.dirs")
+    
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
+            for line in f:
+                if line.startswith("XDG_DOWNLOAD_DIR"):
+                    path = line.split("=")[1].strip().strip('"')
+                    xdg_download = os.path.expandvars(path)
+    
+    output_file = os.path.join(xdg_download, "111.mp3")
     if not os.path.exists(output_file):
         print("Файл буде створено:", output_file)
 
