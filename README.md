@@ -37,9 +37,14 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
 - `soundfile`  
 - `langdetect`  
 - `pyperclip`  
-- `numpy`  
+- `numpy`
+- `omegaconf`
 - `tkinter` (usually included with Python)  
-- `ffmpeg`  
+- `ffmpeg`
+- `wl-clipboard`
+players used in background mode:
+- `mpv`
+or
 - `vlc`
 
 > ⚠️ **Note:** Torch and models require several hundred MB.  
@@ -60,8 +65,8 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
   ```
 3. Install dependencies:
   ```bash
-  pip install torch soundfile langdetect pyperclip numpy
-  sudo apt install ffmpeg vlc
+  pip install torch soundfile langdetect pyperclip numpy omegaconf
+  sudo apt install ffmpeg vlc mpv wl-clipboard
   ```
 4. Run the application:
 
@@ -75,7 +80,7 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
   [Desktop Entry]
   Name=Text2Speech
   Comment=Speak text from clipboard
-  Exec=/home/[yourusername]/text2speech/.venv/bin/python /home/[yourusername]/text2speech/main.py
+  Exec=/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/main.py
   Icon=audio-volume-high
   Terminal=false
   Type=Application
@@ -90,7 +95,7 @@ Add new shortcut:
 Name: Text2Speech
 Command:
 ```bash
-/home/[yourusername]/text2speech/.venv/bin/python /home/[yourusername]/text2speech/main.py
+/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/main.py
 ```
 Key: Alt+K (or any other)
 
