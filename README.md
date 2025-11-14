@@ -103,9 +103,9 @@ Assign key Alt+K (or any other)
 Copy any text to clipboard (Ctrl+C).
 Press Alt+K (or run from menu).
 Script‑sensei will:
-  Detect language
-  Split text into sentences
-  Generate speech
-  Save to 111.mp3
-  Play via CVLC and close after playback
+  - Detect language
+  - Split text into sentences
+  - Generate speech
+  - Save to 111.mp3
+  - Play via CVLC and close after playback
 
