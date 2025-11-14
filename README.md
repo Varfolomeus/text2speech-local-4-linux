@@ -64,7 +64,11 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
   sudo apt install ffmpeg vlc
   ```
 4. Run the application:
-  python main.py
+
+ ```bash
+ python main.py
+ ```
+
 🖥️ Desktop Integration
    ```bash
   cat > ~/.local/share/applications/text2speech.desktop << 'EOF'
