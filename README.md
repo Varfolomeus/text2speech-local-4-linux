@@ -89,7 +89,9 @@ Open Settings → Keyboard → Shortcuts
 Add new shortcut:
 Name: Text2Speech
 Command:
+```bash
 /home/[yourusername]/text2speech/.venv/bin/python /home/[yourusername]/text2speech/main.py
+```
 Key: Alt+K (or any other)
 
 KDE / Plasma
