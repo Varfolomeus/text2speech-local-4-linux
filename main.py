@@ -12,28 +12,51 @@ import tkinter as tk
 from tkinter import messagebox
 from num2words import num2words
 
+# Speakerlist ['v5_ru', 'v4_ru', 'v3_1_ru', 'ru_v3', 
+# 'aidar_v2', 'aidar_8khz', 'aidar_16khz', 'baya_v2', 
+# 'baya_8khz', 'baya_16khz', 'irina_v2', 'irina_8khz', 
+# 'irina_16khz', 'kseniya_v2', 'kseniya_8khz', 'kseniya_16khz', 
+# 'natasha_v2', 'natasha_8khz', 'natasha_16khz', 'ruslan_v2', 
+# 'ruslan_8khz', 'ruslan_16khz', 'v3_en', 'v3_en_indic', 'lj_v2', 
+# 'lj_8khz', 'lj_16khz', 'v3_de', 'thorsten_v2', 'thorsten_8khz', '
+# thorsten_16khz', 'v3_es', 'tux_v2', 'tux_8khz', 'tux_16khz', 
+# 'v3_fr', 'gilles_v2', 'gilles_8khz', 'gilles_16khz', 'aigul_v2', 
+# 'v3_xal', 'erdni_v2', 'v3_tt', 'dilyara_v2', 'v4_uz', 'v3_uz', 
+# 'dilnavoz_v2', 'v4_ua', 'v3_ua', 'mykyta_v2', 'v4_indic', 
+# 'v3_indic', 'v4_cyrillic', 'multi_v2']
+
 # Мапа мов → (language, speaker alias)
 VOICE_MAP = {
-    "en": ("en", "v3_en"),
-    "ua": ("ua", "v4_ua"),
-    "ru": ("ru", "ru_v3")
+    "en": ("en", "v3_en", "en"),
+    "ua": ("ua", "v4_ua", "ua"),
+    "ru": ("ru", "ru_v3", "ru"),
+    "fr": ("fr", "v3_fr", "fr"),
+    "de": ("de", "v3_de", "de"),
+    "es": ("es", "v3_es", "es"),
 }
 
 # Мапа для num2words
 NUM2WORDS_LANG = {
     "ua": "uk",
     "ru": "ru",
-    "en": "en"
+    "en": "en",
+    "fr": "fr",
+    "de": "de",
+    "es": "es",
+    "it": "it",
 }
 
 def detect_voice(text):
     try:
         lang = detect(text)
-        if lang == "uk":
-            lang = "ua"
-        return VOICE_MAP.get(lang, ("en", "v3_en"))
+        if (hasattr(VOICE_MAP, lang)):
+            if lang == "uk":
+                lang = "ua"
+            return VOICE_MAP.get(lang, ("en", "v3_en"))
+        else:
+            return ("multi", "multi_v2", lang)
     except:
-        return ("en", "v3_en")
+        return ("multi", "multi_v2", lang)
 
 def normalize_numbers(text, lang):
     """Перетворює числа (цілі та з дробовою частиною) на слова"""
@@ -132,9 +155,10 @@ def main():
         show_message("Помилка", "Буфер порожній", is_error=True)
         return
 
-    language, default_speaker = detect_voice(text)
+    language, default_speaker, onerrorlang = detect_voice(text)
+
     
-    print("Оригінальний текст:", text[:200])
+    #print("Оригінальний текст:", text[:200])
 
     # 🔧 Нормалізація чисел
     if re.search(r"\d", text):
@@ -145,6 +169,7 @@ def main():
         text = normalize_dates(text, language)
     
     print("Нормалізований текст:", text[:200])
+    print("current lang",language,  "\ndefault_speaker", default_speaker)
 
     # Завантажуємо Silero TTS модель
     model, example_texts = torch.hub.load(
@@ -154,15 +179,19 @@ def main():
         speaker=default_speaker
     )
 
-    speaker = default_speaker if default_speaker in model.speakers else model.speakers[0]
 
+    if(hasattr(model, 'speakers')):
+        speaker = default_speaker if default_speaker in model.speakers else model.speakers[0]
+    else:
+        show_message("Помилка", "Дана мова, " + onerrorlang + " не підтримується", is_error=True)
+        return
     # Розбиваємо текст на блоки
     chunks = split_into_chunks(text, max_len=800)
 
     # Озвучуємо кожен блок
     audio_segments = []
     for idx, chunk in enumerate(chunks, 1):
-        print(f"Озвучення блоку {idx}/{len(chunks)}...")
+        #print(f"Озвучення блоку {idx}/{len(chunks)}...")
         audio = model.apply_tts(text=chunk, speaker=speaker, sample_rate=48000)
         audio_segments.append(audio)
 
