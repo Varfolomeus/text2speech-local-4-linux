@@ -12,55 +12,30 @@ import tkinter as tk
 from tkinter import messagebox
 from num2words import num2words
 
-# Speakerlist ['v5_ru', 'v4_ru', 'v3_1_ru', 'ru_v3', 
-# 'aidar_v2', 'aidar_8khz', 'aidar_16khz', 'baya_v2', 
-# 'baya_8khz', 'baya_16khz', 'irina_v2', 'irina_8khz', 
-# 'irina_16khz', 'kseniya_v2', 'kseniya_8khz', 'kseniya_16khz', 
-# 'natasha_v2', 'natasha_8khz', 'natasha_16khz', 'ruslan_v2', 
-# 'ruslan_8khz', 'ruslan_16khz', 'v3_en', 'v3_en_indic', 'lj_v2', 
-# 'lj_8khz', 'lj_16khz', 'v3_de', 'thorsten_v2', 'thorsten_8khz', '
-# thorsten_16khz', 'v3_es', 'tux_v2', 'tux_8khz', 'tux_16khz', 
-# 'v3_fr', 'gilles_v2', 'gilles_8khz', 'gilles_16khz', 'aigul_v2', 
-# 'v3_xal', 'erdni_v2', 'v3_tt', 'dilyara_v2', 'v4_uz', 'v3_uz', 
-# 'dilnavoz_v2', 'v4_ua', 'v3_ua', 'mykyta_v2', 'v4_indic', 
-# 'v3_indic', 'v4_cyrillic', 'multi_v2']
 
 # Мапа мов → (language, speaker alias)
 VOICE_MAP = {
     "en": ("en", "v3_en", "en"),
-    "ua": ("ua", "v4_ua", "ua"),
+    "uk": ("ua", "v4_ua", "ua"),
     "ru": ("ru", "ru_v3", "ru"),
     "fr": ("fr", "v3_fr", "fr"),
     "de": ("de", "v3_de", "de"),
     "es": ("es", "v3_es", "es"),
 }
-
-# Мапа для num2words
-NUM2WORDS_LANG = {
-    "ua": "uk",
-    "ru": "ru",
-    "en": "en",
-    "fr": "fr",
-    "de": "de",
-    "es": "es",
-    "it": "it",
-}
+# Глобальна змінна для збереження мови тексту
+lang = None
 
 def detect_voice(text):
+    global lang
     try:
         lang = detect(text)
-        if (hasattr(VOICE_MAP, lang)):
-            if lang == "uk":
-                lang = "ua"
-            return VOICE_MAP.get(lang, ("en", "v3_en"))
-        else:
-            return ("multi", "multi_v2", lang)
+        return VOICE_MAP.get(lang, ("multi", "multi_v2", lang))
     except:
         return ("multi", "multi_v2", lang)
 
-def normalize_numbers(text, lang):
+def normalize_numbers(text, num_lang):
     """Перетворює числа (цілі та з дробовою частиною) на слова"""
-    num_lang = NUM2WORDS_LANG.get(lang, "en")
+    #print(num_lang, "мова для num2words")
     
     def replacer(match):
         num_str = match.group()
@@ -71,8 +46,8 @@ def normalize_numbers(text, lang):
                 whole = num2words(int(parts[0]), lang=num_lang)
                 frac = " ".join([num2words(int(d), lang=num_lang) for d in parts[1]])
                 if "%" in num_str:
-                    return f"{whole} кома {frac} відсотків" if lang == "ua" else f"{whole} point {frac} percent"
-                return f"{whole} кома {frac}" if lang == "ua" else f"{whole} point {frac}"
+                    return f"{whole} кома {frac} відсотків" if num_lang == "uk" else f"{whole} point {frac} percent"
+                return f"{whole} кома {frac}" if num_lang == "uk" else f"{whole} point {frac}"
             except Exception:
                 return num_str
         # Відсотки (45%)
@@ -80,7 +55,7 @@ def normalize_numbers(text, lang):
             try:
                 num = int(num_str.replace("%", ""))
                 words = num2words(num, lang=num_lang)
-                return f"{words} відсотків" if lang == "ua" else f"{words} percent"
+                return f"{words} відсотків" if num_lang == "uk" else f"{words} percent"
             except Exception:
                 return num_str
         # Цілі числа
@@ -94,7 +69,7 @@ def normalize_numbers(text, lang):
     # Шукаємо числа (цілі, дробові, з відсотками)
     return re.sub(r"\d+[.,]?\d*%?", replacer, text)
 
-def normalize_dates(text, lang):
+def normalize_dates(text, date_lang):
     """Перетворює дати формату YYYY-MM-DD або DD.MM.YYYY"""
     def replacer(match):
         date_str = match.group()
@@ -103,11 +78,11 @@ def normalize_dates(text, lang):
             for fmt in ["%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"]:
                 try:
                     date = datetime.datetime.strptime(date_str, fmt).date()
-                    if lang == "ua":
+                    if date_lang == "uk":
                         months_ua = ["січня", "лютого", "березня", "квітня", "травня", "червня",
                                    "липня", "серпня", "вересня", "жовтня", "листопада", "грудня"]
                         return f"{date.day} {months_ua[date.month-1]} {date.year} року"
-                    elif lang == "ru":
+                    elif date_lang == "ru":
                         return date.strftime("%d %B %Y года")
                     else:
                         return date.strftime("%B %d, %Y")
@@ -162,14 +137,13 @@ def main():
 
     # 🔧 Нормалізація чисел
     if re.search(r"\d", text):
-        text = normalize_numbers(text, language)
+        text = normalize_numbers(text, lang)
     
     # 🔧 Нормалізація дат
     if re.search(r"\d{4}-\d{2}-\d{2}|\d{2}[./]\d{2}[./]\d{4}", text):
-        text = normalize_dates(text, language)
+        text = normalize_dates(text, lang)
     
-    print("Нормалізований текст:", text[:200])
-    print("current lang",language,  "\ndefault_speaker", default_speaker)
+    #print("Нормалізований текст:", text[:200])
 
     # Завантажуємо Silero TTS модель
     model, example_texts = torch.hub.load(
