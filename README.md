@@ -36,7 +36,8 @@ It is designed for **autonomous use**: one shortcut, one click — and your text
 - `torch`  
 - `soundfile`  
 - `langdetect`  
-- `pyperclip`  
+- `pyperclip`
+- `num2words`
 - `numpy`
 - `omegaconf`
 - `tkinter` (usually included with Python)  
@@ -65,7 +66,7 @@ or
   ```
 3. Install dependencies:
   ```bash
-  pip install torch soundfile langdetect pyperclip numpy omegaconf
+  pip install torch soundfile langdetect pyperclip numpy omegaconf num2words
   sudo apt install ffmpeg vlc mpv wl-clipboard
   ```
 4. Run the application:
