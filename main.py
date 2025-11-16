@@ -12,30 +12,41 @@ import tkinter as tk
 from tkinter import messagebox
 from num2words import num2words
 
-
-# Мапа мов → (language, speaker alias)
+# Мапа мов → (silero_language, silero_speaker)
 VOICE_MAP = {
-    "en": ("en", "v3_en", "en"),
-    "uk": ("ua", "v4_ua", "ua"),
-    "ru": ("ru", "ru_v3", "ru"),
-    "fr": ("fr", "v3_fr", "fr"),
-    "de": ("de", "v3_de", "de"),
-    "es": ("es", "v3_es", "es"),
+    "en": ("en", "v3_en"),
+    "uk": ("ua", "v4_ua"),
+    "ru": ("ru", "ru_v3"),
+    "fr": ("fr", "v3_fr"),
+    "de": ("de", "v3_de"),
+    "es": ("es", "v3_es")
 }
-# Глобальна змінна для збереження мови тексту
-lang = None
+
+# Глобальна змінна для детектованої мови
+detected_lang = None
 
 def detect_voice(text):
-    global lang
+    global detected_lang
     try:
-        lang = detect(text)
-        return VOICE_MAP.get(lang, ("multi", "multi_v2", lang))
+        detected_lang = detect(text)
+        if detected_lang in VOICE_MAP:
+            return VOICE_MAP[detected_lang]
+        else:
+            # Мова не підтримується - лагідно повідомляємо
+            supported = ", ".join(VOICE_MAP.keys())
+            show_message(
+                "Мова не підтримується", 
+                f"Текст мовою '{detected_lang}' неможливо озвучити.\n\nДоступні мови: {supported}", 
+                is_error=True
+            )
+            return None
     except:
-        return ("multi", "multi_v2", lang)
+        detected_lang = "en"
+        return ("en", "v3_en")
 
-def normalize_numbers(text, num_lang):
+def normalize_numbers(text):
     """Перетворює числа (цілі та з дробовою частиною) на слова"""
-    #print(num_lang, "мова для num2words")
+    num_lang = detected_lang
     
     def replacer(match):
         num_str = match.group()
@@ -66,15 +77,15 @@ def normalize_numbers(text, num_lang):
                 # Якщо не вдалося - по цифрі
                 return " ".join(list(num_str))
     
-    # Шукаємо числа (цілі, дробові, з відсотками)
     return re.sub(r"\d+[.,]?\d*%?", replacer, text)
 
-def normalize_dates(text, date_lang):
+def normalize_dates(text):
     """Перетворює дати формату YYYY-MM-DD або DD.MM.YYYY"""
+    date_lang = detected_lang
+    
     def replacer(match):
         date_str = match.group()
         try:
-            # Спробуємо різні формати
             for fmt in ["%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"]:
                 try:
                     date = datetime.datetime.strptime(date_str, fmt).date()
@@ -124,48 +135,64 @@ def show_message(title, text, is_error=False):
         messagebox.showinfo(title, text)
     root.destroy()
 
+def get_download_dir():
+    """Отримує шлях до Downloads через XDG"""
+    xdg_download = os.path.expanduser("~/Downloads")
+    config_file = os.path.expanduser("~/.config/user-dirs.dirs")
+    
+    if os.path.exists(config_file):
+        with open(config_file, "r") as f:
+            for line in f:
+                if line.startswith("XDG_DOWNLOAD_DIR"):
+                    path = line.split("=")[1].strip().strip('"')
+                    xdg_download = os.path.expandvars(path)
+    return xdg_download
+
 def main():
     text = pyperclip.paste().strip()
     if not text:
-        show_message("Помилка", "Буфер порожній", is_error=True)
+        show_message("Буфер порожній", "Скопіюйте текст перед запуском", is_error=True)
         return
 
-    language, default_speaker, onerrorlang = detect_voice(text)
-
+    result = detect_voice(text)
+    if result is None:
+        return  # Тихо зупиняємось
     
-    #print("Оригінальний текст:", text[:200])
-
-    # 🔧 Нормалізація чисел
+    language, default_speaker = result
+    
+    # Нормалізація чисел
     if re.search(r"\d", text):
-        text = normalize_numbers(text, lang)
+        text = normalize_numbers(text)
     
-    # 🔧 Нормалізація дат
+    # Нормалізація дат
     if re.search(r"\d{4}-\d{2}-\d{2}|\d{2}[./]\d{2}[./]\d{4}", text):
-        text = normalize_dates(text, lang)
-    
-    #print("Нормалізований текст:", text[:200])
+        text = normalize_dates(text)
 
     # Завантажуємо Silero TTS модель
-    model, example_texts = torch.hub.load(
-        repo_or_dir='snakers4/silero-models',
-        model='silero_tts',
-        language=language,
-        speaker=default_speaker
-    )
+    try:
+        model, example_texts = torch.hub.load(
+            repo_or_dir='snakers4/silero-models',
+            model='silero_tts',
+            language=language,
+            speaker=default_speaker
+        )
+    except Exception as e:
+        show_message("Помилка моделі", f"Неможливо завантажити озвучку для '{detected_lang}'", is_error=True)
+        return
 
-
-    if(hasattr(model, 'speakers')):
+    # Вибір спікера
+    if hasattr(model, 'speakers'):
         speaker = default_speaker if default_speaker in model.speakers else model.speakers[0]
     else:
-        show_message("Помилка", "Дана мова, " + onerrorlang + " не підтримується", is_error=True)
+        show_message("Помилка озвучення", f"Голоси для '{detected_lang}' недоступні", is_error=True)
         return
+
     # Розбиваємо текст на блоки
     chunks = split_into_chunks(text, max_len=800)
 
     # Озвучуємо кожен блок
     audio_segments = []
     for idx, chunk in enumerate(chunks, 1):
-        #print(f"Озвучення блоку {idx}/{len(chunks)}...")
         audio = model.apply_tts(text=chunk, speaker=speaker, sample_rate=48000)
         audio_segments.append(audio)
 
@@ -178,18 +205,9 @@ def main():
     buffer.seek(0)
 
     # Шлях до вихідного файлу
-    xdg_download = os.path.expanduser("~/Downloads")  # fallback
-    config_file = os.path.expanduser("~/.config/user-dirs.dirs")
+    output_file = os.path.join(get_download_dir(), "111.mp3")
 
-    if os.path.exists(config_file):
-        with open(config_file, "r") as f:
-            for line in f:
-                if line.startswith("XDG_DOWNLOAD_DIR"):
-                    path = line.split("=")[1].strip().strip('"')
-                    xdg_download = os.path.expandvars(path)
-
-    output_file = os.path.join(xdg_download, "111.mp3")
-    # Використовуємо ffmpeg напряму для кодування у MP3
+    # Кодування у MP3
     proc = subprocess.run(
         ["ffmpeg", "-y", "-i", "pipe:0", "-f", "mp3", output_file],
         input=buffer.read(),
@@ -198,18 +216,10 @@ def main():
     )
 
     if proc.returncode == 0:
-        #show_message("Успіх", f"Збережено у {output_file} (голос: {speaker})")
-        # VLC відтворює і закривається сам
-        #subprocess.run(["cvlc", "--play-and-exit", output_file])
-        subprocess.run([
-            "mpv",
-            "--no-terminal",
-            "--really-quiet",
-            "--no-video",
-            output_file
-        ])
+        # Тихо відтворюємо
+        subprocess.run(["mpv", "--no-terminal", "--really-quiet", "--no-video", output_file])
     else:
-        show_message("Помилка ffmpeg", proc.stderr.decode(), is_error=True)
+        show_message("Помилка кодування", "Неможливо створити аудіофайл", is_error=True)
 
 if __name__ == "__main__":
     main()
