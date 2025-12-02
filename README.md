@@ -72,7 +72,7 @@ or
 4. Run the application:
 
  ```bash
- python main.py
+ python textToSpeechLocalSmart.py
  ```
 
 🖥️ Desktop Integration
@@ -81,7 +81,7 @@ or
   [Desktop Entry]
   Name=Text2Speech
   Comment=Speak text from clipboard
-  Exec=/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/main.py
+  Exec=/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/textToSpeechLocalSmart.py
   Icon=audio-volume-high
   Terminal=false
   Type=Application
@@ -96,7 +96,7 @@ Add new shortcut:
 Name: Text2Speech
 Command:
 ```bash
-/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/main.py
+/home/[yourusername]/text2speech-local-4-linux/.venv/bin/python /home/[yourusername]/text2speech-local-4-linux/textToSpeechLocalSmart.py
 ```
 Key: Alt+K (or any other)
 
